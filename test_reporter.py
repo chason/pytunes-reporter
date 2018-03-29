@@ -1,12 +1,13 @@
 import pytest
 import responses
 from faker import Factory
+from requests.exceptions import HTTPError
 
 # library to test
 import reporter
 
 sales_url = 'https://reportingitc-reporter.apple.com/reportservice/sales/v1'
-financial_url = 'https://reportingitc-reporter.apple.com/reportservice/financial/v1'
+financial_url = 'https://reportingitc-reporter.apple.com/reportservice/finance/v1'
 
 
 @pytest.fixture(scope='session')
@@ -46,14 +47,12 @@ def test_reporter_have_password_create(faker):
             'SERVICE_REQUEST_ID': request_id,
         }
     )
+    response_xml = f'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<ViewToken>\n    <AccessToken>{access_token}</AccessToken>\n    <ExpirationDate>2018-09-24</ExpirationDate>\n    <Message>Your new access token has been generated.</Message>\n</ViewToken>\n'
     responses.add(
         responses.POST,
         sales_url,
         status=200,
-        body=(
-            'Your new access token has been generated.\n'
-            'AccessToken:{0}\nExpiration Date:2018-09-22\n'.format(access_token)
-        )
+        body=response_xml,
     )
 
     new_reporter = reporter.Reporter(
@@ -160,3 +159,22 @@ def test_finanical_vendors_and_regions(faker):
 
     new_reporter = reporter.Reporter(access_token=access_token)
     assert new_reporter.vendors_and_regions == expected_result
+
+
+@responses.activate
+def test_error_handling():
+    error_xml = """
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Error>
+    <Code>101</Code>
+    <Message>Invalid command.</Message>
+</Error>"""
+    responses.add(
+        responses.POST,
+        sales_url,
+        body=error_xml,
+        status=400
+    )
+    new_reporter = reporter.Reporter(user_id='asdf@asdf.com', password='12345')
+    with pytest.raises(HTTPError):
+        new_reporter.access_token
