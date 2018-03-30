@@ -25,6 +25,7 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.5',
     ],
     keywords='itunes reporter financial sales',
     py_modules=["reporter"],
@@ -32,5 +33,5 @@ setup(
     extras_require={
         'test': ['pytest', 'faker', 'responses', 'pytest-responses'],
     },
-    python_requires='>=3.6',
+    python_requires='>=3.5',
 )
