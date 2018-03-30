@@ -9,6 +9,23 @@ import requests
 
 
 class Reporter:
+    """ Class to facilitate using the iTunes Reporter API
+
+    When instantiating the class, you may provide either your user_id and
+    password or the AccessKey for your account. If you provide the user_id and
+    password, a new AccessKey will be retrieved (invalidating any previous ones)
+    and stored when you try and access any data from the iTunes Reporter API.
+
+    Other public methods/properties:
+        access_token - AccessToken for this account
+        account - if there are multiple accounts attached to the iTunes Reporter
+                  account, the account number will need to be provided
+        vendors - List of vendor IDs
+        vendors_and_regions - dictionary of available reports with the vendor
+            IDs as keys
+        download_sales_report - method to download sales reports
+        download_financial_report - method to download financial reports
+    """
     mode = 'Robot.XML'
     version = '2.2'
     endpoint = 'https://reportingitc-reporter.apple.com/reportservice/{type}/v1'
@@ -21,6 +38,19 @@ class Reporter:
                  access_token: str = '',
                  password: str = '',
                  user_id: str = ''):
+        """ Instantiate Reporter object
+
+        Arguments:
+            account - account ID (only necessary in case of multiple accounts
+                attached to iTunes Connect account
+            access_token - AccessToken for accessing API. Optional in case
+                `user_id` and `password` are provided, in which case it will
+                be fetched from the API
+            user_id - user ID to access account. Only necessary if access_key is
+                not provided
+            password - password for account. Only necessary if access_key is not
+                provided
+        """
         if access_token:
             self._access_token = access_token
         else:
@@ -33,20 +63,23 @@ class Reporter:
 
     @property
     def access_token(self):
+        """ AccessToken for account """
         if not self._access_token:
-            self._access_token = self.obtain_access_token()
+            self._access_token = self._obtain_access_token()
         return self._access_token
 
     @property
     def vendors(self):
+        """ List of vendors attached to account """
         if not self._vendors:
-            self._vendors = self.obtain_vendor_list()
+            self._vendors = self._obtain_vendor_list()
         return self._vendors
 
     @property
     def vendors_and_regions(self):
+        """ Dictionary of available reports. Dictionary key is vendor IDs"""
         if not self._vendors_regions:
-            self._vendors_regions = self.obtain_vendor_regions()
+            self._vendors_regions = self._obtain_vendor_regions()
         return self._vendors_regions
 
     @staticmethod
@@ -59,13 +92,13 @@ class Reporter:
             for region in child if region.tag == 'Region'
         ]
 
-    def obtain_vendor_regions(self):
+    def _obtain_vendor_regions(self):
         credentials = {
             'accesstoken': self.access_token
         }
 
-        response = self.make_request('finance', 'getVendorsAndRegions',
-                                     credentials)
+        response = self._make_request('finance', 'getVendorsAndRegions',
+                                      credentials)
         xml_data = ET.fromstring(response.text.strip('\n'))
 
         return_dict = {}
@@ -77,28 +110,86 @@ class Reporter:
 
         return return_dict
 
-    def obtain_vendor_list(self):
+    def _obtain_vendor_list(self):
         credentials = {
             'accesstoken': self.access_token
         }
 
-        response = self.make_request('sales', 'getVendors', credentials)
+        response = self._make_request('sales', 'getVendors', credentials)
         xml_data = ET.fromstring(response.text.strip('\n'))
         return [child.text for child in xml_data]
 
+    def download_sales_report(self,
+                              vendor: str,
+                              report_type: str,
+                              date_type: str,
+                              date: str,
+                              report_subtype: str = '',
+                              report_version: str = ''):
+        """Downloads sales report, puts the TSV file into a Python list
+
+        Information on the parameters can be found in the iTunes Reporter
+        documentation:
+        https://help.apple.com/itc/appsreporterguide/#/itcbd9ed14ac
+
+        :param vendor:
+        :param report_type:
+        :param date_type:
+        :param date:
+        :param report_subtype:
+        :param report_version:
+        :return:
+        """
+        credentials = {
+            'accesstoken': self.access_token
+        }
+        command = (f'getReport, {vendor},{report_type},{report_subtype},'
+                   f'{date_type},{date},{report_version}')
+
+        return self._process_gzip(self._make_request('sales', command,
+                                                     credentials))
+
+    def download_financial_report(self,
+                                  vendor: str,
+                                  region_code: str,
+                                  report_type: str,
+                                  fiscal_year: str,
+                                  fiscal_period: str):
+        """Downloads sales report, puts the TSV file into a Python list
+
+        Information on the parameters can be found in the iTunes Reporter
+        documentation:
+        https://help.apple.com/itc/appsreporterguide/#/itc21263284f
+
+        :param vendor:
+        :param region_code:
+        :param report_type:
+        :param fiscal_year:
+        :param fiscal_period:
+        :return:
+        """
+        credentials = {
+            'accesstoken': self.access_token
+        }
+        command = (f'getReport {vendor}, {region_code}, {report_type}, '
+                   f'{fiscal_year}, {fiscal_period}')
+
+        return self._process_gzip(self._make_request('finance', command,
+                                                     credentials))
+
     @staticmethod
-    def format_data(data):
+    def _format_data(data):
         return {
             'jsonRequest': json.dumps(data)
         }
 
-    def obtain_access_token(self) -> str:
+    def _obtain_access_token(self) -> str:
         credentials = {
             'userid': self.user_id,
             'password': self.password,
         }
 
-        response = self.make_request('sales', 'generateToken', credentials)
+        response = self._make_request('sales', 'generateToken', credentials)
 
         # annoyingly enough, this takes two requests to accomplish
         service_request_id = response.headers['service_request_id']
@@ -107,16 +198,16 @@ class Reporter:
             'isExistingToken': 'Y',
             'requestId': service_request_id,
         }
-        response = self.make_request('sales', 'generateToken', credentials,
-                                     extra_params=params)
+        response = self._make_request('sales', 'generateToken', credentials,
+                                      extra_params=params)
         xml_data = ET.fromstring(response.text.strip('\n'))
         return xml_data.find('AccessToken').text
 
-    def make_request(self,
-                     cmd_type: str,
-                     command: str,
-                     credentials: Dict[str, str],
-                     extra_params: Dict[str, str] = None):
+    def _make_request(self,
+                      cmd_type: str,
+                      command: str,
+                      credentials: Dict[str, str],
+                      extra_params: Dict[str, str] = None):
         if not extra_params:
             extra_params = {}
 
@@ -134,7 +225,7 @@ class Reporter:
             'queryInput': command,
         }
 
-        data = self.format_data(data)
+        data = self._format_data(data)
         data.update(extra_params)
 
         response = requests.post(endpoint, data=data)
@@ -146,32 +237,3 @@ class Reporter:
         file_obj = io.StringIO(content.decode('utf-8'))
         reader = csv.DictReader(file_obj, dialect=csv.excel_tab)
         return [row for row in reader]
-
-    def download_sales_report(self,
-                              vendor: str,
-                              report_type: str,
-                              date_type: str,
-                              date: str,
-                              report_subtype: str = '',
-                              report_version: str = ''):
-        credentials = {
-            'accesstoken': self.access_token
-        }
-        command = (f'getReport, {vendor},{report_type},{report_subtype},'
-                   f'{date_type},{date},{report_version}')
-
-        return self._process_gzip(self.make_request('sales', command, credentials))
-
-    def download_financial_report(self,
-                                  vendor: str,
-                                  region_code: str,
-                                  report_type: str,
-                                  fiscal_year: str,
-                                  fiscal_period: str):
-        credentials = {
-            'accesstoken': self.access_token
-        }
-        command = (f'getReport {vendor}, {region_code}, {report_type}, '
-                   f'{fiscal_year}, {fiscal_period}')
-
-        return self._process_gzip(self.make_request('finance', command, credentials))
