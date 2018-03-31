@@ -38,7 +38,8 @@ setup(
             'responses',
             'pytest-responses',
             'coverage',
-            'python-coveralls'
+            'python-coveralls',
+            'pytest-cov',
         ],
     },
     python_requires='>=3.6',
