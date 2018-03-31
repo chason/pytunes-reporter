@@ -2,8 +2,8 @@ language: python
 python:
   - "3.6"
   - "3.7-dev"
-
 install:
-  - pip install .[test]
-
-script: pytest
+  - pip install -e .[test] --use-mirrors
+script: pytest --cov reporter
+after_success:
+  - coveralls

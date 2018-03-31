@@ -31,7 +31,14 @@ setup(
     py_modules=["reporter"],
     install_requires=['requests'],
     extras_require={
-        'test': ['pytest', 'faker', 'responses', 'pytest-responses'],
+        'dev': ['bumpversion'],
+        'test': [
+            'pytest',
+             'faker',
+             'responses',
+             'pytest-responses',
+             'coveralls',
+         ],
     },
     python_requires='>=3.6',
 )
