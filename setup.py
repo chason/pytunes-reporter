@@ -14,6 +14,7 @@ setup(
     version='0.2.0',
     description='Library to interact with iTunes Reporter API',
     long_description=long_description,
+    long_description_content_type='text/x-rst',
     url='https://github.com/gifbitjapan/pytunes-reporter',
     author='Chason Chaffin',
     author_email='chason.c@routeone-power.com',
