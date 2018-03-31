@@ -8,6 +8,10 @@ pyTunes Reporter
 .. image:: https://travis-ci.org/gifbitjapan/pytunes-reporter.svg?branch=master
     :target: https://travis-ci.org/gifbitjapan/pytunes-reporter
 
+.. image:: https://coveralls.io/repos/github/gifbitjapan/pytunes-reporter/badge.svg?branch=master
+    :target: https://coveralls.io/github/gifbitjapan/pytunes-reporter?branch=master
+
+
 A Python Framework for Getting Information Out Of iTunes Reporter API
 
 Overview
