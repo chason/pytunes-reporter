@@ -3,10 +3,14 @@ import io
 import json
 import xml.etree.ElementTree as ET
 import zlib
-from typing import Dict
-
+from typing import Dict, List, Union, Optional, Type
 import requests
 
+# Custom types
+Region = Dict[str, Union[str, List[str]]]
+RegionList = List[Region]
+Row = Dict[str, str]
+Data = List[Row]
 
 class Reporter:
     """ Class to facilitate using the iTunes Reporter API
@@ -28,7 +32,6 @@ class Reporter:
     """
     mode = 'Robot.XML'
     version = '2.2'
-    endpoint = 'https://reportingitc-reporter.apple.com/reportservice/{type}/v1'
     _access_token = ''
     _vendors = None
     _vendors_regions = None
@@ -62,28 +65,28 @@ class Reporter:
         self.account = account
 
     @property
-    def access_token(self):
+    def access_token(self) -> str:
         """ AccessToken for account """
         if not self._access_token:
             self._access_token = self._obtain_access_token()
         return self._access_token
 
     @property
-    def vendors(self):
+    def vendors(self) -> Optional[List[str]]:
         """ List of vendors attached to account """
         if not self._vendors:
             self._vendors = self._obtain_vendor_list()
         return self._vendors
 
     @property
-    def vendors_and_regions(self):
+    def vendors_and_regions(self) -> Optional[Dict[str, Region]]:
         """ Dictionary of available reports. Dictionary key is vendor IDs"""
         if not self._vendors_regions:
             self._vendors_regions = self._obtain_vendor_regions()
         return self._vendors_regions
 
     @staticmethod
-    def _process_regions(child):
+    def _process_regions(child: Type[ET.Element]) -> RegionList:
         return [
             {
                 'code': region[0].text,
@@ -92,7 +95,7 @@ class Reporter:
             for region in child if region.tag == 'Region'
         ]
 
-    def _obtain_vendor_regions(self):
+    def _obtain_vendor_regions(self) -> Dict[str, Region]:
         credentials = {
             'accesstoken': self.access_token
         }
@@ -110,7 +113,7 @@ class Reporter:
 
         return return_dict
 
-    def _obtain_vendor_list(self):
+    def _obtain_vendor_list(self) -> List[str]:
         credentials = {
             'accesstoken': self.access_token
         }
@@ -125,7 +128,7 @@ class Reporter:
                               date_type: str,
                               date: str,
                               report_subtype: str = '',
-                              report_version: str = ''):
+                              report_version: str = '') -> Data:
         """Downloads sales report, puts the TSV file into a Python list
 
         Information on the parameters can be found in the iTunes Reporter
@@ -154,7 +157,7 @@ class Reporter:
                                   region_code: str,
                                   report_type: str,
                                   fiscal_year: str,
-                                  fiscal_period: str):
+                                  fiscal_period: str) -> Data:
         """Downloads sales report, puts the TSV file into a Python list
 
         Information on the parameters can be found in the iTunes Reporter
@@ -178,7 +181,7 @@ class Reporter:
                                                      credentials))
 
     @staticmethod
-    def _format_data(data):
+    def _format_data(data: Dict[str, str]) -> Dict[str, str]:
         return {
             'jsonRequest': json.dumps(data)
         }
@@ -207,14 +210,14 @@ class Reporter:
                       cmd_type: str,
                       command: str,
                       credentials: Dict[str, str],
-                      extra_params: Dict[str, str] = None):
+                      extra_params: Dict[str, str] = None
+                      ) -> Type[requests.Response]:
         if not extra_params:
             extra_params = {}
 
-        command = '[p=Reporter.properties, {cmd_type}.{command}]'.format(
-            cmd_type=cmd_type.capitalize(), command=command
-        )
-        endpoint = self.endpoint.format(type=cmd_type)
+        command = f'[p=Reporter.properties, {cmd_type.capitalize()}.{command}]'
+        endpoint = ('https://reportingitc-reporter.apple.com'
+                    f'/reportservice/{cmd_type}/v1')
 
         data = {
             'version': self.version,
@@ -230,7 +233,8 @@ class Reporter:
         response.raise_for_status()
         return response
 
-    def _process_gzip(self, response):
+    @staticmethod
+    def _process_gzip(response: Type[requests.Response]) -> Data:
         content = zlib.decompress(response.content, 15 + 32)
         file_obj = io.StringIO(content.decode('utf-8'))
         reader = csv.DictReader(file_obj, dialect=csv.excel_tab)
