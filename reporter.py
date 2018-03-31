@@ -217,11 +217,9 @@ class Reporter:
         endpoint = self.endpoint.format(type=cmd_type)
 
         data = {
-            'account': '13391800',
             'version': self.version,
             'mode': self.mode,
             **credentials,
-            'userid': 'appli@rainbird.co.jp',
             'queryInput': command,
         }
 
