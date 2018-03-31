@@ -4,6 +4,7 @@ import json
 import xml.etree.ElementTree as ET
 import zlib
 from typing import Dict, List, Union, Optional, cast
+
 import requests
 
 # Custom types
@@ -238,5 +239,6 @@ class Reporter:
     def _process_gzip(response: requests.Response) -> Data:
         content = zlib.decompress(response.content, 15 + 32)
         file_obj = io.StringIO(content.decode('utf-8'))
-        reader = csv.DictReader(file_obj, dialect=cast(csv.Dialect, csv.excel_tab))
+        reader = csv.DictReader(file_obj, dialect=cast(csv.Dialect,
+                                                       csv.excel_tab))
         return [row for row in reader]

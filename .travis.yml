@@ -2,6 +2,9 @@ language: python
 python:
   - "3.6"
   - "3.7-dev"
+matrix:
+  allow_failures:
+    - python: "3.7-dev"
 install:
   - pip install -e .[test]
 script: pytest --cov-report term-missing --cov=reporter
