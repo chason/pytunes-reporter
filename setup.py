@@ -11,7 +11,7 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 
 setup(
     name='pytunes-reporter',
-    version='0.1',
+    version='0.1.0',
     description='Library to interact with iTunes Reporter API',
     long_description=long_description,
     url='https://github.com/gifbitjapan/pytunes-reporter',
