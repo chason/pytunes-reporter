@@ -1,6 +1,6 @@
-============
+==================
 pyTunes Reporter
-============
+==================
 
 .. image:: https://badge.fury.io/py/pytunes-reporter.svg
     :target: https://badge.fury.io/py/pytunes-reporter
