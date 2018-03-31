@@ -12,6 +12,7 @@ RegionList = List[Region]
 Row = Dict[str, str]
 Data = List[Row]
 
+
 class Reporter:
     """ Class to facilitate using the iTunes Reporter API
 
@@ -86,7 +87,7 @@ class Reporter:
         return self._vendors_regions
 
     @staticmethod
-    def _process_regions(child: Type[ET.Element]) -> RegionList:
+    def _process_regions(child: ET.Element) -> RegionList:
         return [
             {
                 'code': region[0].text,
@@ -211,7 +212,7 @@ class Reporter:
                       command: str,
                       credentials: Dict[str, str],
                       extra_params: Dict[str, str] = None
-                      ) -> Type[requests.Response]:
+                      ) -> requests.Response:
         if not extra_params:
             extra_params = {}
 
@@ -234,7 +235,7 @@ class Reporter:
         return response
 
     @staticmethod
-    def _process_gzip(response: Type[requests.Response]) -> Data:
+    def _process_gzip(response: requests.Response) -> Data:
         content = zlib.decompress(response.content, 15 + 32)
         file_obj = io.StringIO(content.decode('utf-8'))
         reader = csv.DictReader(file_obj, dialect=csv.excel_tab)
