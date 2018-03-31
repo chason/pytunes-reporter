@@ -3,7 +3,7 @@ import io
 import json
 import xml.etree.ElementTree as ET
 import zlib
-from typing import Dict, List, Union, Optional, Type
+from typing import Dict, List, Union, Optional, cast
 import requests
 
 # Custom types
@@ -41,7 +41,7 @@ class Reporter:
                  account: str = '',
                  access_token: str = '',
                  password: str = '',
-                 user_id: str = ''):
+                 user_id: str = '') -> None:
         """ Instantiate Reporter object
 
         Arguments:
@@ -80,7 +80,7 @@ class Reporter:
         return self._vendors
 
     @property
-    def vendors_and_regions(self) -> Optional[Dict[str, Region]]:
+    def vendors_and_regions(self) -> Optional[Dict[str, Dict[str, Union[RegionList, str]]]]:
         """ Dictionary of available reports. Dictionary key is vendor IDs"""
         if not self._vendors_regions:
             self._vendors_regions = self._obtain_vendor_regions()
@@ -96,7 +96,7 @@ class Reporter:
             for region in child if region.tag == 'Region'
         ]
 
-    def _obtain_vendor_regions(self) -> Dict[str, Region]:
+    def _obtain_vendor_regions(self) -> Dict[str, Dict[str, Union[RegionList, str]]]:
         credentials = {
             'accesstoken': self.access_token
         }
@@ -238,5 +238,5 @@ class Reporter:
     def _process_gzip(response: requests.Response) -> Data:
         content = zlib.decompress(response.content, 15 + 32)
         file_obj = io.StringIO(content.decode('utf-8'))
-        reader = csv.DictReader(file_obj, dialect=csv.excel_tab)
+        reader = csv.DictReader(file_obj, dialect=cast(csv.Dialect, csv.excel_tab))
         return [row for row in reader]
