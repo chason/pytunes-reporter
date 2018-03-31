@@ -34,11 +34,12 @@ setup(
         'dev': ['bumpversion'],
         'test': [
             'pytest',
-             'faker',
-             'responses',
-             'pytest-responses',
-             'coveralls',
-         ],
+            'faker',
+            'responses',
+            'pytest-responses',
+            'coverage',
+            'python-coveralls'
+        ],
     },
     python_requires='>=3.6',
 )
