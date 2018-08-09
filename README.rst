@@ -48,7 +48,7 @@ object::
 
     from reporter import Reporter
 
-    rep = Reporter(access_key='29c656f3-2dcf-4140-9346-96633197af82')
+    rep = Reporter(access_token='29c656f3-2dcf-1234-5678-123456789abc')
     print(rep.vendors)
     # ['80012345', '80054321']
 
