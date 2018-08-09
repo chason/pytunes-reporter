@@ -43,7 +43,7 @@ class, using either your username and password::
     # ['80012345', '80054321']
 
 Or your AccessKey (obtainable via the web interface, Apple's own Reporter tool,
-or using the access_key property of an already instantiated ``Reporter``
+or using the ``access_token`` property of an already instantiated ``Reporter``
 object::
 
     from reporter import Reporter
