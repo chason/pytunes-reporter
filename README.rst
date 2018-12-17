@@ -43,12 +43,12 @@ class, using either your username and password::
     # ['80012345', '80054321']
 
 Or your AccessKey (obtainable via the web interface, Apple's own Reporter tool,
-or using the access_key property of an already instantiated ``Reporter``
+or using the ``access_token`` property of an already instantiated ``Reporter``
 object::
 
     from reporter import Reporter
 
-    rep = Reporter(access_key='29c656f3-2dcf-4140-9346-96633197af82')
+    rep = Reporter(access_token='29c656f3-2dcf-1234-5678-123456789abc')
     print(rep.vendors)
     # ['80012345', '80054321']
 
