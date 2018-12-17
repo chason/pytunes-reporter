@@ -2,7 +2,7 @@ import csv
 import io
 import json
 import xml.etree.ElementTree as ET
-import zlib
+import gzip
 from typing import Dict, List, Union, Optional, cast
 
 import requests
@@ -237,7 +237,7 @@ class Reporter:
 
     @staticmethod
     def _process_gzip(response: requests.Response) -> Data:
-        content = zlib.decompress(response.content, 15 + 32)
+        content = gzip.decompress(response.content)
         file_obj = io.StringIO(content.decode('utf-8'))
         reader = csv.DictReader(file_obj, dialect=cast(csv.Dialect,
                                                        csv.excel_tab))
