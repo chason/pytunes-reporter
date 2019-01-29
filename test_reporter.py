@@ -1,3 +1,5 @@
+from urllib.parse import quote_plus
+
 import pytest
 import responses
 from faker import Factory
@@ -178,3 +180,15 @@ def test_error_handling():
     new_reporter = reporter.Reporter(user_id='asdf@asdf.com', password='12345')
     with pytest.raises(HTTPError):
         new_reporter.access_token
+
+
+# Fixing Issue #6
+def test_account_number_is_passed():
+    responses.add(
+        responses.POST,
+        sales_url,
+        status=200,
+    )
+    new_reporter = reporter.Reporter(user_id='asdf@asdf.com', account='654321', password='12345')
+    response = new_reporter._make_request('sales', 'getVendors', {})
+    assert quote_plus("a=654321") in response.request.body

@@ -217,7 +217,11 @@ class Reporter:
         if not extra_params:
             extra_params = {}
 
-        command = f'[p=Reporter.properties, {cmd_type.capitalize()}.{command}]'
+        if self.account:
+            command = f'[p=Reporter.properties, a={self.account} {cmd_type.capitalize()}.{command}]'
+        else:
+            command = f'[p=Reporter.properties, {cmd_type.capitalize()}.{command}]'
+
         endpoint = ('https://reportingitc-reporter.apple.com'
                     f'/reportservice/{cmd_type}/v1')
 
