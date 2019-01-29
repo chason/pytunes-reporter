@@ -33,7 +33,7 @@ setup(
     extras_require={
         'dev': ['bumpversion'],
         'test': [
-            'pytest',
+            'pytest>=3.6',
             'faker',
             'responses',
             'pytest-responses',
