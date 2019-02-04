@@ -4,6 +4,7 @@ import pytest
 import responses
 from faker import Factory
 from requests.exceptions import HTTPError
+from datetime import datetime, timedelta
 
 # library to test
 import reporter
@@ -36,6 +37,17 @@ def test_reporter_have_password_create(faker):
     user_id = faker.email()
     password = faker.password()
     access_token = faker.uuid4()
+    access_token_old = faker.uuid4()
+    past_date = datetime.now().date() - timedelta(days=2)
+    past_date_str = past_date.strftime("%Y-%m-%d")
+
+    response_xml = f'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<ViewToken>\n    <AccessToken>{access_token_old}</AccessToken>\n    <ExpirationDate>{past_date_str}</ExpirationDate>\n</ViewToken>\n'
+    responses.add(
+        responses.POST,
+        sales_url,
+        status=200,
+        body=response_xml,
+    )
 
     responses.add(
         responses.POST,
@@ -63,7 +75,7 @@ def test_reporter_have_password_create(faker):
     )
 
     assert type(new_reporter) is reporter.Reporter
-    assert new_reporter.access_token
+    assert new_reporter.access_token == access_token
 
 
 def test_vendor_numbers(faker):
@@ -192,3 +204,72 @@ def test_account_number_is_passed():
     new_reporter = reporter.Reporter(user_id='asdf@asdf.com', account='654321', password='12345')
     response = new_reporter._make_request('sales', 'getVendors', {})
     assert quote_plus("a=654321") in response.request.body
+
+
+@responses.activate
+def test_reporter_unexpired_token(faker):
+    user_id = faker.email()
+    password = faker.password()
+    access_token = faker.uuid4()
+    future_date = datetime.now().date() + timedelta(days=2)
+    future_date_str = future_date.strftime("%Y-%m-%d")
+
+    response_xml = f'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<ViewToken>\n    <AccessToken>{access_token}</AccessToken>\n    <ExpirationDate>{future_date_str}</ExpirationDate>\n</ViewToken>\n'
+    responses.add(
+        responses.POST,
+        sales_url,
+        status=200,
+        body=response_xml,
+    )
+
+    new_reporter = reporter.Reporter(
+        user_id=user_id,
+        password=password
+    )
+
+    assert type(new_reporter) is reporter.Reporter
+    assert new_reporter.access_token == access_token
+
+
+@responses.activate
+def test_reporter_no_existing_token(faker):
+    request_id = faker.uuid4()
+    user_id = faker.email()
+    password = faker.password()
+    access_token = faker.uuid4()
+
+    response_xml = f'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<ViewToken><Message>You currently don\'t have an access token. Type generateToken to generate a new one.</Message>\n</ViewToken>\n'
+    responses.add(
+        responses.POST,
+        sales_url,
+        status=200,
+        body=response_xml,
+    )
+
+    responses.add(
+        responses.POST,
+        sales_url,
+        body=(
+            b'If you generate a new access token, your existing token will be '
+            b'deleted. You will need to save your new access token within your'
+            b' properties file. Do you still want to continue? (y/n): '),
+        status=200,
+        headers={
+            'SERVICE_REQUEST_ID': request_id,
+        }
+    )
+    response_xml = f'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<ViewToken>\n    <AccessToken>{access_token}</AccessToken>\n    <ExpirationDate>2018-09-24</ExpirationDate>\n    <Message>Your new access token has been generated.</Message>\n</ViewToken>\n'
+    responses.add(
+        responses.POST,
+        sales_url,
+        status=200,
+        body=response_xml,
+    )
+
+    new_reporter = reporter.Reporter(
+        user_id=user_id,
+        password=password
+    )
+
+    assert type(new_reporter) is reporter.Reporter
+    assert new_reporter.access_token == access_token

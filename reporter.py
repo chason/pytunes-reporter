@@ -4,6 +4,7 @@ import json
 import xml.etree.ElementTree as ET
 import gzip
 from typing import Dict, List, Union, Optional, cast
+from datetime import datetime
 
 import requests
 
@@ -193,6 +194,17 @@ class Reporter:
             'userid': self.user_id,
             'password': self.password,
         }
+
+        response = self._make_request('sales', 'viewToken', credentials)
+        xml_data = ET.fromstring(response.text.strip('\n'))
+        expiration_date_elem = xml_data.find('ExpirationDate')
+        if expiration_date_elem is not None:
+            # User already has token. we will check if it's expired or not
+            expiration_date_str = expiration_date_elem.text
+            expiration_date = datetime.strptime(expiration_date_str, "%Y-%m-%d").date()
+            if expiration_date > datetime.now().date():
+                # token expiration date is greater than today's date
+                return xml_data.find('AccessToken').text
 
         response = self._make_request('sales', 'generateToken', credentials)
 
