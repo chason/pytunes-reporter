@@ -47,7 +47,7 @@ class Reporter:
                  user_id: str = '') -> None:
         """ Instantiate Reporter object
 
-        Arguments:
+        Args:
             account - account ID (only necessary in case of multiple accounts
                 attached to iTunes Connect account
             access_token - AccessToken for accessing API. Optional in case
@@ -139,13 +139,16 @@ class Reporter:
         documentation:
         https://help.apple.com/itc/appsreporterguide/#/itcbd9ed14ac
 
-        :param vendor:
-        :param report_type:
-        :param date_type:
-        :param date:
-        :param report_subtype:
-        :param report_version:
-        :return:
+        Args:
+            vendor: Vendor ID supplied by Apple
+            report_type: report type as specified by Apple
+            date_type: date type as specified by Apple
+            date: date to obtain sales report for
+            report_subtype: subtype to fetch, optional
+            report_version: report version, optional
+
+        Returns:
+            List of Dicts with sales information
         """
         credentials = {
             'accesstoken': self.access_token
@@ -168,12 +171,15 @@ class Reporter:
         documentation:
         https://help.apple.com/itc/appsreporterguide/#/itc21263284f
 
-        :param vendor:
-        :param region_code:
-        :param report_type:
-        :param fiscal_year:
-        :param fiscal_period:
-        :return:
+        Args:
+            vendor: Vendor ID supplied by Apple
+            region_code: string representing region code for report
+            report_type: report type as specified by Apple
+            fiscal_year: year to obtain the report from
+            fiscal_period: period to obtain report from, format as specified by Apple
+
+        Returns:
+            A list of Dicts containing the requested information.
         """
         credentials = {
             'accesstoken': self.access_token
