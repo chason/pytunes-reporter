@@ -202,7 +202,7 @@ def test_account_number_is_passed():
         status=200,
     )
     new_reporter = reporter.Reporter(user_id='asdf@asdf.com', account='654321', password='12345')
-    response = new_reporter._make_request('sales', 'getVendors', {})
+    response = new_reporter.make_request('sales', 'getVendors', {})
     assert quote_plus("a=654321") in response.request.body
 
 
