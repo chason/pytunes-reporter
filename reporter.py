@@ -32,6 +32,7 @@ class Reporter:
             IDs as keys
         download_sales_report - method to download sales reports
         download_financial_report - method to download financial reports
+        make_request - method to make raw requests against the API
     """
     mode = 'Robot.XML'
     version = '2.2'
@@ -103,8 +104,8 @@ class Reporter:
             'accesstoken': self.access_token
         }
 
-        response = self._make_request('finance', 'getVendorsAndRegions',
-                                      credentials)
+        response = self.make_request('finance', 'getVendorsAndRegions',
+                                     credentials)
         xml_data = ET.fromstring(response.text.strip('\n'))
 
         return_dict = {}
@@ -121,7 +122,7 @@ class Reporter:
             'accesstoken': self.access_token
         }
 
-        response = self._make_request('sales', 'getVendors', credentials)
+        response = self.make_request('sales', 'getVendors', credentials)
         xml_data = ET.fromstring(response.text.strip('\n'))
         return [child.text for child in xml_data]
 
@@ -152,8 +153,8 @@ class Reporter:
         command = (f'getReport, {vendor},{report_type},{report_subtype},'
                    f'{date_type},{date},{report_version}')
 
-        return self._process_gzip(self._make_request('sales', command,
-                                                     credentials))
+        return self._process_gzip(self.make_request('sales', command,
+                                                    credentials))
 
     def download_financial_report(self,
                                   vendor: str,
@@ -180,8 +181,8 @@ class Reporter:
         command = (f'getReport {vendor}, {region_code}, {report_type}, '
                    f'{fiscal_year}, {fiscal_period}')
 
-        return self._process_gzip(self._make_request('finance', command,
-                                                     credentials))
+        return self._process_gzip(self.make_request('finance', command,
+                                                    credentials))
 
     @staticmethod
     def _format_data(data: Dict[str, str]) -> Dict[str, str]:
@@ -195,7 +196,7 @@ class Reporter:
             'password': self.password,
         }
 
-        response = self._make_request('sales', 'viewToken', credentials)
+        response = self.make_request('sales', 'viewToken', credentials)
         xml_data = ET.fromstring(response.text.strip('\n'))
         expiration_date_elem = xml_data.find('ExpirationDate')
         if expiration_date_elem is not None:
@@ -206,7 +207,7 @@ class Reporter:
                 # token expiration date is greater than today's date
                 return xml_data.find('AccessToken').text
 
-        response = self._make_request('sales', 'generateToken', credentials)
+        response = self.make_request('sales', 'generateToken', credentials)
 
         # annoyingly enough, this takes two requests to accomplish
         service_request_id = response.headers['service_request_id']
@@ -215,17 +216,34 @@ class Reporter:
             'isExistingToken': 'Y',
             'requestId': service_request_id,
         }
-        response = self._make_request('sales', 'generateToken', credentials,
-                                      extra_params=params)
+        response = self.make_request('sales', 'generateToken', credentials,
+                                     extra_params=params)
         xml_data = ET.fromstring(response.text.strip('\n'))
         return xml_data.find('AccessToken').text
 
-    def _make_request(self,
-                      cmd_type: str,
-                      command: str,
-                      credentials: Dict[str, str],
-                      extra_params: Dict[str, str] = None
-                      ) -> requests.Response:
+    def make_request(self,
+                     cmd_type: str,
+                     command: str,
+                     credentials: Dict[str, str],
+                     extra_params: Dict[str, str] = None
+                     ) -> requests.Response:
+        """ Function to make a request against the API
+
+        Makes request to the API and returns the result contained in a `requests.Response`
+        object.
+
+        Args:
+            cmd_type: A string with the "type" of command (e.g. "sales" or "finance")
+            command: Actual command to run, should also include any parameters
+            credentials: Dict with user credentials to auth with
+            extra_params: Dictionary of any extra params to pass in the data block
+
+        Returns:
+            A `requests.Response` object with the API's response contained within
+
+        Raises:
+            `requests.exceptions.HTTPError`: If API returns an error.
+        """
         if not extra_params:
             extra_params = {}
 
