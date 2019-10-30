@@ -34,17 +34,20 @@ class Reporter:
         download_financial_report - method to download financial reports
         make_request - method to make raw requests against the API
     """
-    mode = 'Robot.XML'
-    version = '2.2'
-    _access_token = ''
+
+    mode = "Robot.XML"
+    version = "2.2"
+    _access_token = ""
     _vendors = None
     _vendors_regions = None
 
-    def __init__(self,
-                 account: str = '',
-                 access_token: str = '',
-                 password: str = '',
-                 user_id: str = '') -> None:
+    def __init__(
+        self,
+        account: str = "",
+        access_token: str = "",
+        password: str = "",
+        user_id: str = "",
+    ) -> None:
         """ Instantiate Reporter object
 
         Args:
@@ -83,7 +86,9 @@ class Reporter:
         return self._vendors
 
     @property
-    def vendors_and_regions(self) -> Optional[Dict[str, Dict[str, Union[RegionList, str]]]]:
+    def vendors_and_regions(
+        self,
+    ) -> Optional[Dict[str, Dict[str, Union[RegionList, str]]]]:
         """ Dictionary of available reports. Dictionary key is vendor IDs"""
         if not self._vendors_regions:
             self._vendors_regions = self._obtain_vendor_regions()
@@ -92,47 +97,42 @@ class Reporter:
     @staticmethod
     def _process_regions(child: ET.Element) -> RegionList:
         return [
-            {
-                'code': region[0].text,
-                'reports': [report.text for report in region[1]]
-            }
-            for region in child if region.tag == 'Region'
+            {"code": region[0].text, "reports": [report.text for report in region[1]]}
+            for region in child
+            if region.tag == "Region"
         ]
 
     def _obtain_vendor_regions(self) -> Dict[str, Dict[str, Union[RegionList, str]]]:
-        credentials = {
-            'accesstoken': self.access_token
-        }
+        credentials = {"accesstoken": self.access_token}
 
-        response = self.make_request('finance', 'getVendorsAndRegions',
-                                     credentials)
-        xml_data = ET.fromstring(response.text.strip('\n'))
+        response = self.make_request("finance", "getVendorsAndRegions", credentials)
+        xml_data = ET.fromstring(response.text.strip("\n"))
 
         return_dict = {}
         for child in xml_data:
             return_dict[child[0].text] = {
-                'id': child[0].text,
-                'regions': self._process_regions(child)
+                "id": child[0].text,
+                "regions": self._process_regions(child),
             }
 
         return return_dict
 
     def _obtain_vendor_list(self) -> List[str]:
-        credentials = {
-            'accesstoken': self.access_token
-        }
+        credentials = {"accesstoken": self.access_token}
 
-        response = self.make_request('sales', 'getVendors', credentials)
-        xml_data = ET.fromstring(response.text.strip('\n'))
+        response = self.make_request("sales", "getVendors", credentials)
+        xml_data = ET.fromstring(response.text.strip("\n"))
         return [child.text for child in xml_data]
 
-    def download_sales_report(self,
-                              vendor: str,
-                              report_type: str,
-                              date_type: str,
-                              date: str,
-                              report_subtype: str = '',
-                              report_version: str = '') -> Data:
+    def download_sales_report(
+        self,
+        vendor: str,
+        report_type: str,
+        date_type: str,
+        date: str,
+        report_subtype: str = "",
+        report_version: str = "",
+    ) -> Data:
         """Downloads sales report, puts the TSV file into a Python list
 
         Information on the parameters can be found in the iTunes Reporter
@@ -150,21 +150,22 @@ class Reporter:
         Returns:
             List of Dicts with sales information
         """
-        credentials = {
-            'accesstoken': self.access_token
-        }
-        command = (f'getReport, {vendor},{report_type},{report_subtype},'
-                   f'{date_type},{date},{report_version}')
+        credentials = {"accesstoken": self.access_token}
+        command = (
+            f"getReport, {vendor},{report_type},{report_subtype},"
+            f"{date_type},{date},{report_version}"
+        )
 
-        return self._process_gzip(self.make_request('sales', command,
-                                                    credentials))
+        return self._process_gzip(self.make_request("sales", command, credentials))
 
-    def download_financial_report(self,
-                                  vendor: str,
-                                  region_code: str,
-                                  report_type: str,
-                                  fiscal_year: str,
-                                  fiscal_period: str) -> Data:
+    def download_financial_report(
+        self,
+        vendor: str,
+        region_code: str,
+        report_type: str,
+        fiscal_year: str,
+        fiscal_period: str,
+    ) -> Data:
         """Downloads sales report, puts the TSV file into a Python list
 
         Information on the parameters can be found in the iTunes Reporter
@@ -181,58 +182,57 @@ class Reporter:
         Returns:
             A list of Dicts containing the requested information.
         """
-        credentials = {
-            'accesstoken': self.access_token
-        }
-        command = (f'getReport, {vendor},{region_code},{report_type},'
-                   f'{fiscal_year},{fiscal_period}')
+        credentials = {"accesstoken": self.access_token}
+        command = (
+            f"getReport, {vendor},{region_code},{report_type},"
+            f"{fiscal_year},{fiscal_period}"
+        )
 
-        return self._process_gzip(self.make_request('finance', command,
-                                                    credentials))
+        return self._process_gzip(self.make_request("finance", command, credentials))
 
     @staticmethod
     def _format_data(data: Dict[str, str]) -> Dict[str, str]:
-        return {
-            'jsonRequest': json.dumps(data)
-        }
+        return {"jsonRequest": json.dumps(data)}
 
     def _obtain_access_token(self) -> str:
         credentials = {
-            'userid': self.user_id,
-            'password': self.password,
+            "userid": self.user_id,
+            "password": self.password,
         }
 
-        response = self.make_request('sales', 'viewToken', credentials)
-        xml_data = ET.fromstring(response.text.strip('\n'))
-        expiration_date_elem = xml_data.find('ExpirationDate')
+        response = self.make_request("sales", "viewToken", credentials)
+        xml_data = ET.fromstring(response.text.strip("\n"))
+        expiration_date_elem = xml_data.find("ExpirationDate")
         if expiration_date_elem is not None:
             # User already has token. we will check if it's expired or not
             expiration_date_str = expiration_date_elem.text
             expiration_date = datetime.strptime(expiration_date_str, "%Y-%m-%d").date()
             if expiration_date > datetime.now().date():
                 # token expiration date is greater than today's date
-                return xml_data.find('AccessToken').text
+                return xml_data.find("AccessToken").text
 
-        response = self.make_request('sales', 'generateToken', credentials)
+        response = self.make_request("sales", "generateToken", credentials)
 
         # annoyingly enough, this takes two requests to accomplish
-        service_request_id = response.headers['service_request_id']
+        service_request_id = response.headers["service_request_id"]
 
         params = {
-            'isExistingToken': 'Y',
-            'requestId': service_request_id,
+            "isExistingToken": "Y",
+            "requestId": service_request_id,
         }
-        response = self.make_request('sales', 'generateToken', credentials,
-                                     extra_params=params)
-        xml_data = ET.fromstring(response.text.strip('\n'))
-        return xml_data.find('AccessToken').text
+        response = self.make_request(
+            "sales", "generateToken", credentials, extra_params=params
+        )
+        xml_data = ET.fromstring(response.text.strip("\n"))
+        return xml_data.find("AccessToken").text
 
-    def make_request(self,
-                     cmd_type: str,
-                     command: str,
-                     credentials: Dict[str, str],
-                     extra_params: Dict[str, str] = None
-                     ) -> requests.Response:
+    def make_request(
+        self,
+        cmd_type: str,
+        command: str,
+        credentials: Dict[str, str],
+        extra_params: Dict[str, str] = None,
+    ) -> requests.Response:
         """ Function to make a request against the API
 
         Makes request to the API and returns the result contained in a `requests.Response`
@@ -254,18 +254,19 @@ class Reporter:
             extra_params = {}
 
         if self.account:
-            command = f'[p=Reporter.properties, a={self.account} {cmd_type.capitalize()}.{command}]'
+            command = f"[p=Reporter.properties, a={self.account} {cmd_type.capitalize()}.{command}]"
         else:
-            command = f'[p=Reporter.properties, {cmd_type.capitalize()}.{command}]'
+            command = f"[p=Reporter.properties, {cmd_type.capitalize()}.{command}]"
 
-        endpoint = ('https://reportingitc-reporter.apple.com'
-                    f'/reportservice/{cmd_type}/v1')
+        endpoint = (
+            "https://reportingitc-reporter.apple.com" f"/reportservice/{cmd_type}/v1"
+        )
 
         data = {
-            'version': self.version,
-            'mode': self.mode,
+            "version": self.version,
+            "mode": self.mode,
             **credentials,
-            'queryInput': command,
+            "queryInput": command,
         }
 
         data = self._format_data(data)
@@ -278,7 +279,6 @@ class Reporter:
     @staticmethod
     def _process_gzip(response: requests.Response) -> Data:
         content = gzip.decompress(response.content)
-        file_obj = io.StringIO(content.decode('utf-8'))
-        reader = csv.DictReader(file_obj, dialect=cast(csv.Dialect,
-                                                       csv.excel_tab))
+        file_obj = io.StringIO(content.decode("utf-8"))
+        reader = csv.DictReader(file_obj, dialect=cast(csv.Dialect, csv.excel_tab))
         return [row for row in reader]
