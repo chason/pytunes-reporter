@@ -184,8 +184,8 @@ class Reporter:
         credentials = {
             'accesstoken': self.access_token
         }
-        command = (f'getReport {vendor}, {region_code}, {report_type}, '
-                   f'{fiscal_year}, {fiscal_period}')
+        command = (f'getReport, {vendor},{region_code},{report_type},'
+                   f'{fiscal_year},{fiscal_period}')
 
         return self._process_gzip(self.make_request('finance', command,
                                                     credentials))
